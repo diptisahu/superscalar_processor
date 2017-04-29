@@ -1,0 +1,7 @@
+ROB size - 16
+Rename Registers - 16
+Branch Predictor - 32 entries
+Always take PC as that of top entry of ROB (if interrupt arrives)
+How to make ROB? Circular queue
+How to look for free rename registers? 2 priority encoders - 1 looks from the beginning, 1 from the end. If both gve same result, or no result; stall.
+scheduler ensures that never two instructions with same PC are scheduled to be dispatched at the same time.
