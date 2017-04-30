@@ -49,64 +49,66 @@ end process;
 process(PC_execute1, PC_execute2, exec_target1, exec_target2, write1, write2, clk, rst)
     variable check: std_logic;
 begin
-    if(rst = '0') then
-        if(write1 = '1') then
-            check := '0';
-            for i in 0 to 31 loop
-                if(PC(i) = PC_execute1) then
-                    if (valid(i) = '1') then
-                        target(i) <= exec_target1;
-                        history(i) <= taken1;
-                        check := '1';
-                        exit;
-                    end if;
-                end if;
-            end loop;
-
-            if (check = '0') then
+    if(clk'event and (clk  = '0')) then
+        if(rst = '0') then
+            if(write1 = '1') then
+                check := '0';
                 for i in 0 to 31 loop
-                    if(valid(i) = '0') then
-                        valid(i) <= '1';
-                        PC(i) <= PC_execute1;
-                        target(i) <= exec_target1;
-                        history(i) <= taken1;
-                        exit;
+                    if(PC(i) = PC_execute1) then
+                        if (valid(i) = '1') then
+                            target(i) <= exec_target1;
+                            history(i) <= taken1;
+                            check := '1';
+                            exit;
+                        end if;
                     end if;
                 end loop;
-            end if;
-        end if;
 
-
-        if(write2 = '1') then
-            check := '0';
-            for i in 0 to 31 loop
-                if(PC(i) = PC_execute2) then
-                    if (valid(i) = '1') then
-                        target(i) <= exec_target2;
-                        history(i) <= taken2;
-                        check := '1';
-                        exit;
-                    end if;
+                if (check = '0') then
+                    for i in 0 to 31 loop
+                        if(valid(i) = '0') then
+                            valid(i) <= '1';
+                            PC(i) <= PC_execute1;
+                            target(i) <= exec_target1;
+                            history(i) <= taken1;
+                            exit;
+                        end if;
+                    end loop;
                 end if;
-            end loop;
+            end if;
 
-            if (check = '0') then
+
+            if(write2 = '1') then
+                check := '0';
                 for i in 0 to 31 loop
-                    if(valid(i) = '0') then
-                        valid(i) <= '1';
-                        PC(i) <= PC_execute2;
-                        target(i) <= exec_target2;
-                        history(i) <= taken2;
-                        exit;
+                    if(PC(i) = PC_execute2) then
+                        if (valid(i) = '1') then
+                            target(i) <= exec_target2;
+                            history(i) <= taken2;
+                            check := '1';
+                            exit;
+                        end if;
                     end if;
                 end loop;
+
+                if (check = '0') then
+                    for i in 0 to 31 loop
+                        if(valid(i) = '0') then
+                            valid(i) <= '1';
+                            PC(i) <= PC_execute2;
+                            target(i) <= exec_target2;
+                            history(i) <= taken2;
+                            exit;
+                        end if;
+                    end loop;
+                end if;
             end if;
+        else
+            PC <= (others => (others => '0'));
+            target <= (others => (others => '0'));
+            history <= (others => '0');
+            valid <=  (others => '0');
         end if;
-    else
-        PC <= (others => (others => '0'));
-        target <= (others => (others => '0'));
-        history <= (others => '0');
-        valid <=  (others => '0');
     end if;
 
 end process;
