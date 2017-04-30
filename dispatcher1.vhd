@@ -3,6 +3,13 @@ use ieee.std_logic_1164.all;
 library work;
 use work.Microprocessor_project.all;
 
+--there is mux before the pipeline at C2, Z2, Rs21, and Rs22.
+--if the previous instruction writes to C, Z or Rs21 or Rs22; corresponding mux control will get high. Control signal given by dispatcher1.
+--the first entry (0) to the mux is from the ARF. The second one is the new tag coming as free_TagC1 or free_tagZ1 or free_tag1.
+--this is because for the second instruction, the ARF doesnt has the correct tag.
+
+--NO STALL ASSUMPTION MADE. TO HANDLE STALL, LOOK FOR SOME OTHER MECHANISM OR MAKE SUITABLE CHANGES (like using tag_valid bits coming frm the RRF).
+
 entity dispatcher1 is
 
 port(	Rd1, Rd2: in std_logic_vector(2 downto 0);
@@ -19,20 +26,23 @@ port(	Rd1, Rd2: in std_logic_vector(2 downto 0);
 		Rs21_tag_mux_ctrl, Rs22_tag_mux_ctrl, busy21, busy22: out std_logic;
 		Rs21_tag, Rs22_tag: out std_logic_vector(3 downto 0);
 
-		free_tag1_used, free_tag2_used : out std_logic
+		free_tag1_used, free_tag2_used : out std_logic;
 
 		C1_en, Z1_en, C2_en, Z2_en : in std_logic;
-		C2_dep, Z2_dep : in std_logic;
+		C2_dep, Z2_dep : in std_logic; --not used. to be taken care by scheduler.
 		free_tagC1_in, free_tagC2_in, free_tagZ1_in, free_tagZ2_in : in std_logic_vector(3 downto 0);
-		freeC1_valid, freeC2_valid, freeZ1_valid, freeZ2_valid: in std_logic;
+		tagZ1_valid, tagZ2_valid, tagC1_valid, tagC2_valid : in std_logic;
 		
 		--address to write is directly taken from the pipeline
 		tagC_out, tagZ_out : out std_logic_vector(3 downto 0);
 		tagC_write_en, tagZ_write_en : out std_logic; 
+
 		--busy is set whenever write occurs (implemented as part of ARF)
 
 		C2_tag_mux_ctrl, Z2_tag_mux_ctrl, busyC2, busyZ2: out std_logic;
 		C2_tag, Z2_tag: out std_logic_vector(3 downto 0);
+
+		tagC1_used, tagZ1_used, tagC2_used, tagZ2_used : out std_logic
 	
 	);
 
@@ -81,61 +91,64 @@ begin
 	Rs21_tag <= free_tag1_in; Rs22_tag <= free_tag1_in;
 
 
--- lot of wrong stuff here. Correct for C and Z renaming. Also add related stuff in dispatcher2
-	process(C1_en, C2_en, Z1_en, Z2_en)
-		variable vtagC_write_en, vtagZ_write_en : std_logic;
-		variable vC2_tag_mux_ctrl, vZ2_tag_mux_ctrl : std_logic;
+--now for the C and Z flags
+
+	tagC1_used <= C1_en or C2_en;
+	tagZ1_used <= Z1_en or Z2_en;
+	tagC2_used <= C1_en and C2_en;
+	tagZ2_used <= Z1_en and Z2_en;
+
+	tagC_write_en <= C1_en or C2_en;
+	tagZ_write_en <= Z1_en or Z2_en;		
+
+	process(C1_en, C2_en, Z1_en, Z2_en, tagC1_valid, tagZ1_valid)
+		variable vtagC_out, vtagZ_out : std_logic_vector(3 downto 0);
+		variable vtagC2_mux_ctrl, vtagZ2_mux_ctrl : std_logic;
 	begin
-		vtagC_write_en := '0'; vtagZ_write_en := '0';
-		vC2_tag_mux_ctrl := '0'; vZ2_tag_mux_ctrl := '0';
-
-		if((C1_en or C2_en) = '1' and freeC1_valid = '1') then
-			vtagC_write_en := '1';
+		vtagC_out := "0000"; vtagZ_out := "0000";
+		vtagC2_mux_ctrl := '0'; vtagZ2_mux_ctrl := '0';
+		if(C1_en = '1' and tagC1_valid = '1') then
+			vtagC_out := free_tagC1_in;
 		end if;
-
-		if(C1_en = '1' and freeC1_valid = '1') then
-			if(C2_en = '1' and freeC2_valid = '1') then
-				Ctag_out := free_tagC2_in;
-			else 
-				Ctag_out := free_tagC1_in; 			
-		end if;
-
-		if((Z1_en or C2_en) = '1' and freeZ1_valid = '1') then
-			vtagZ_write_en := '1';	
+		if(C2_en = '1' and tagC2_valid = '1') then
+			vtagC_out := free_tagC2_in;
+		elsif(C2_en = '1' and C1_en = '0' and tagC1_valid = '1') then
+			vtagC_out := free_tagC1_in;
 		end if;
 		
-		if(C2_dep = '1' and C1_en = '1') then		
-			vC2_tag_mux_ctrl := '1';
+		if(Z1_en = '1' and tagZ1_valid = '1') then
+			vtagZ_out := free_tagZ1_in;
+		end if;
+		if(Z2_en = '1' and tagZ2_valid = '1') then
+			vtagZ_out := free_tagZ2_in;
+		elsif(Z2_en = '1' and Z1_en = '0' and tagZ1_valid = '1') then
+			vtagZ_out := free_tagZ1_in;
+		end if;
+		
+		if(C1_en = '1') then
+			vtagC2_mux_ctrl := '1';
+		end if;
+		if(Z1_en = '1') then
+			vtagZ2_mux_ctrl := '1';
 		end if;
 
-		if(Z2_dep = '1' and Z1_en = '1') then		
-			vZ2_tag_mux_ctrl := '1';
-		end if;
-
-		tag1_write_en <= vtag1_write_en;
-		free_tag1_used <= vtag1_write_en;
-		tag2_write_en <= vtag2_write_en;
-		free_tag2_used <= vtag2_write_en;
-		C2_tag_mux_ctrl <= vC2_tag_mux_ctrl;
-		Z2_tag_mux_ctrl <= vZ2_tag_mux_ctrl;
-		busyC2 <= vC2_tag_mux_ctrl;
-		busyZ2 <= vZ2_tag_mux_ctrl;
-
+	tagC_out <= vtagC_out; tagZ_out <= vtagZ_out;
+	C2_tag_mux_ctrl <= vtagC2_mux_ctrl; Z2_tag_mux_ctrl <= vtagZ2_mux_ctrl;
+	busyC2 <= vtagC2_mux_ctrl; busyZ2 <= vtagZ2_mux_ctrl;
 	end process;
-
-	tagC_out <= free_tagC1_in; tagZ_out <= free_tag
 
 end behave;
 
-		C1_en, Z1_en, C2_en, Z2_en : in std_logic;
-		C2_dep, Z2_dep : in std_logic;
-		free_tagC1_in, free_tagC2_in, free_tagZ1_in, free_tagZ2_in : in std_logic_vector(3 downto 0);
-		freeC1_valid, freeC2_valid, freeZ1_valid, freeZ2_valid: in std_logic;
-		
-		--address to write is directly taken from the pipeline
-		tagC_out, tagZ_out : out std_logic_vector(3 downto 0);
-		tagC_write_en, tagZ_write_en : out std_logic; 
-		--busy is set whenever write occurs (implemented as part of ARF)
 
-		C2_tag_mux_ctrl, Z2_tag_mux_ctrl, busy21, busy22: out std_logic;
-		C2_tag, Z2_tag: out std_logic_vector(3 downto 0);
+
+
+
+
+
+
+
+
+
+
+
+
