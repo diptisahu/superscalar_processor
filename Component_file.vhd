@@ -5,374 +5,109 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 package Microprocessor_project is
-type Data_in is array (natural range <>) of std_logic_vector(15 downto 0);
-type Data_in_2 is array (natural range <>) of std_logic_vector(1 downto 0);
-type Data_in_3 is array (natural range <>) of std_logic_vector(2 downto 0);
-type Data_in_8 is array (natural range <>) of std_logic_vector(7 downto 0);
-type Data_in_9 is array (natural range <>) of std_logic_vector(8 downto 0);
-type Data_in_1 is array (natural range <>) of std_logic_vector(0 downto 0);
---type FsmState is ( instruction_fetch, S2, S3, S4, S40, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14);
-
-component priority_encoder is
-port(  
-	x: in std_logic_vector(7 downto 0);
-	y: out std_logic_vector(2 downto 0)
-       
- );
-end component;
-
-component encode_modifier is
-port( encode_bits : in std_logic_vector(2 downto 0);
-      priority_bits_in : in std_logic_vector(7 downto 0);
-      priority_bits_out	: out std_logic_vector( 7 downto 0)
-	);
-
-end component;
-
-
-component decoder_pe is
-port(  x: in std_logic_vector(2 downto 0);
-	y: out std_logic_vector(7 downto 0)       
- );
-end component;
-
-component DataRegister is
-	generic (data_width:integer);
-	port (Din: in std_logic_vector(data_width-1 downto 0);
-	      Dout: out std_logic_vector(data_width-1 downto 0);
-	      clk, enable,reset: in std_logic);
-end component;
-
-component DataRegister_sp is
-	generic (data_width:integer);
-	port (Din: in std_logic_vector(data_width-1 downto 0);
-	      Dout: out std_logic_vector(data_width-1 downto 0) ;
-	      clk, enable,imm_data_enable,reset: in std_logic);
-end component;
-
---
-
-component Data_MUX is
-generic (control_bit_width:integer);
-port(Din:in Data_in( (2**control_bit_width)-1 downto 0);
-	Dout:out std_logic_vector(15 downto 0);
-	control_bits:in std_logic_vector(control_bit_width-1 downto 0)
-);
-end component;
-
-component Instruction_Memory is
-port ( Din: in std_logic_vector(15 downto 0);
-	Dout: out std_logic_vector(15 downto 0);
-	write_enable,read_enable,clk: in std_logic;
-	Addr: in std_logic_vector(15 downto 0)
-);
-end component;
-
-component Data_Memory is
-port ( Din: in std_logic_vector(15 downto 0);
-	Dout: out std_logic_vector(15 downto 0);
-	write_enable,read_enable,clk: in std_logic;
-	Addr: in std_logic_vector(15 downto 0)
-);
-end component;
-
-component ALU is
-port( X,Y: in std_logic_vector(15 downto 0);
-      Z : out std_logic_vector(15 downto 0);
-      carry_flag,zero_flag :out std_logic;
-      Control_bits: in std_logic_vector(1 downto 0)
-      
- );
-end component;
-
-
-component ALU_adder is
-port(  
-	x,y: in std_logic_vector(15 downto 0);
-	c_in : in std_logic;
-	s: out std_logic_vector(15 downto 0);
-       	c_out: out std_logic
- );
-end component;
-
-component ALU_XOR is
-port( X,Y: in std_logic_vector(15 downto 0);
-      Z : out std_logic_vector(15 downto 0)
- );
-end component;
-
-component ALU_NAND is
-port( X,Y: in std_logic_vector(15 downto 0);
-      Z : out std_logic_vector(15 downto 0)
- );
-end component;
-
-component full_adder is
-port(  
-	x,y,c_in: in std_logic;
-	s, c_out: out std_logic
-       
- );
-end component;
-
-
-
-component zero_checker is
-port( X :in std_logic_vector(15 downto 0);
-      Z:out std_logic
-      
- );
-end component;
-
-
-component inverter is
-port( X : in std_logic_vector(16 downto 0);
-      Y : out std_logic_vector(16 downto 0)
- );
-end component;
-
--- used to multiplex 8 bit data fed to priority encoder
-component Data_MUX_8 is
-generic (control_bit_width:integer);
-port(Din:in Data_in_8( (2**control_bit_width)-1 downto 0);
-	Dout:out std_logic_vector(7 downto 0);
-	control_bits:in std_logic_vector(control_bit_width-1 downto 0)
-);
-end component;
---- used to multiplex 3 bit data fed to A1 RF
-component Data_MUX_3 is
-generic (control_bit_width:integer);
-port(Din:in Data_in_3( (2**control_bit_width)-1 downto 0);
-	Dout:out std_logic_vector(2 downto 0);
-	control_bits:in std_logic_vector(control_bit_width-1 downto 0)
-);
-end component;
-
---- used to multiplex 2 bit data
-component Data_MUX_2 is
-generic (control_bit_width:integer);
-port(Din:in Data_in_2( (2**control_bit_width)-1 downto 0);
-	Dout:out std_logic_vector(1 downto 0);
-	control_bits:in std_logic_vector(control_bit_width-1 downto 0)
-);
-end component;
-
-component Data_MUX_9 is
-generic (control_bit_width:integer);
-port(Din:in Data_in_9( (2**control_bit_width)-1 downto 0);
-	Dout:out std_logic_vector(8 downto 0);
-	control_bits:in std_logic_vector(control_bit_width-1 downto 0)
-);
-end component;
-
---data extender
-component data_extender_9to16 is
-port(
-	x: in std_logic_vector(8 downto 0);
-	y: out std_logic_vector( 15 downto 0)
-);
-end component;
-
---sign extender 6 to 16
-component sign_extender_6to16 is
-port(
-	x: in std_logic_vector(5 downto 0);
-	y: out std_logic_vector( 15 downto 0)
-);
-end component;
---sign extender 6 to 16
-component sign_extender_9to16 is
-port(
-	x: in std_logic_vector(8 downto 0);
-	y: out std_logic_vector( 15 downto 0)
-);
-end component;
-
---data mux for zero flag
-component Data_MUX_1 is
-generic (control_bit_width:integer);
-port(Din:in Data_in_1( (2**control_bit_width)-1 downto 0);
-	Dout:out std_logic_vector(0 downto 0);
-	control_bits:in std_logic_vector(control_bit_width-1 downto 0)
-);
-end component;
-
-component pipeline_reg1 is
-
-port(
-	Instr_in :in std_logic_vector( 15 downto 0);
-	Pc_in : in std_logic_vector( 15 downto 0);
-
-	Instr_out:out std_logic_vector( 15 downto 0);
-	Pc_out:out std_logic_vector( 15 downto 0);
-
-	clk,enable,imm_data_enable,reset :in std_logic
-);
-end component;
-
-component pipeline_reg2 is
-
-port(	Rd_in : in std_logic_vector(2 downto 0);
-	Rs1_in : in std_logic_vector(2 downto 0);
-	Rs2_in : in std_logic_vector(2 downto 0);
-	Imm9_in :in std_logic_vector( 8 downto 0);
-	Pc_in : in std_logic_vector( 15 downto 0);
-
-	RF_enable_in,Mem_write_in,Mem_read_in,Dout_mux_cntrl_in:in std_logic;
-	carry_enable_in,zero_enable_in,carry_dep_in,zero_dep_in: in std_logic;
-	alu_output_mux_cntrl_in : in std_logic_vector(1 downto 0);
-	alu_cntrl_in : in std_logic_vector(1 downto 0);
-	S2_mux_cntrl_in :in std_logic;
-	alu_a_input_mux_cntrl_in,Load_0_in:in std_logic;
-	Rs1_dep_in,Rs2_dep_in:in std_logic;
-	JAL_bit_in,JLR_bit_in, LM_SM_bit_in:in std_logic;
-
-	Rd_out : out std_logic_vector(2 downto 0);
-	Rs1_out : out std_logic_vector(2 downto 0);
-	Rs2_out : out std_logic_vector(2 downto 0);
-	Imm9_out :out std_logic_vector( 8 downto 0);
-	Pc_out : out std_logic_vector( 15 downto 0);
-
-	RF_enable_out,Mem_write_out,Mem_read_out,Dout_mux_cntrl_out: out std_logic;
-	carry_enable_out,zero_enable_out,carry_dep_out,zero_dep_out: out std_logic;
-	alu_output_mux_cntrl_out : out std_logic_vector(1 downto 0);
-	alu_cntrl_out : out std_logic_vector(1 downto 0);
-	S2_mux_cntrl_out :out std_logic;
-	alu_a_input_mux_cntrl_out,Load_0_out:out std_logic;
-	Rs1_dep_out,Rs2_dep_out:out std_logic;
-	JAL_bit_out,JLR_bit_out, LM_SM_bit_out:out std_logic;
-
-	clk,enable,reset :in std_logic
-);
-end component;
-
-
-component pipeline_reg3 is
-
-port(
-	Rd_in : in std_logic_vector(2 downto 0);
-	Rs1_in : in std_logic_vector(2 downto 0);
-	Rs2_in : in std_logic_vector(2 downto 0);
-	S1_in, S2_in: in std_logic_vector( 15 downto 0);
-	Imm9_in :in std_logic_vector( 8 downto 0);
-	Pc_in : in std_logic_vector( 15 downto 0);
-
-	RF_enable_in,Mem_write_in,Mem_read_in,Dout_mux_cntrl_in:in std_logic;
-	carry_enable_in,zero_enable_in,carry_dep_in,zero_dep_in: in std_logic;
-	alu_output_mux_cntrl_in : in std_logic_vector(1 downto 0);
-	alu_cntrl_in: in std_logic_vector(1 downto 0);
-	alu_a_input_mux_cntrl_in,alu_b_input_mux_cntrl_in,Load_0_in:in std_logic;
-	Rs1_dep_in,Rs2_dep_in:in std_logic;
-
-
-	Rd_out : out std_logic_vector(2 downto 0);
-	Rs1_out:out std_logic_vector(2 downto 0);
-	Rs2_out:out std_logic_vector(2 downto 0);
-	Imm9_out:out std_logic_vector( 8 downto 0);
-	Pc_out : out std_logic_vector( 15 downto 0);
-
-	S1_out, S2_out: out std_logic_vector( 15 downto 0);
-	RF_enable_out,Mem_write_out,Mem_read_out,Dout_mux_cntrl_out: out std_logic;
-	carry_enable_out,zero_enable_out,carry_dep_out,zero_dep_out: out std_logic;
-	alu_output_mux_cntrl_out : out std_logic_vector(1 downto 0);
-	alu_cntrl_out: out std_logic_vector(1 downto 0);
-	
-	alu_a_input_mux_cntrl_out,alu_b_input_mux_cntrl_out,Load_0_out:out std_logic;
-	Rs1_dep_out,Rs2_dep_out:out std_logic;
-
-	LM_SM_bit_in:in std_logic;
-	LM_SM_bit_out:out std_logic;
-
-	clk,enable,S2_enable,reset :in std_logic
-);
-
-end component;
-
-component pipeline_reg4 is
-port(
-	--alu_cntrl_1_in :in std_logic;
-	Rd_in : in std_logic_vector(2 downto 0);
-	Rs1_in : in std_logic_vector(2 downto 0);
-	Rs2_in : in std_logic_vector(2 downto 0);
-	Pc_in : in std_logic_vector( 15 downto 0);
-
-	S1_in: in std_logic_vector( 15 downto 0);
-	RF_enable_in,Mem_write_in,Mem_read_in,Dout_mux_cntrl_in:in std_logic;
-	Load_0_in:in std_logic;
-	alu_result_in:in std_logic_vector(15 downto 0);
-	alu_z_output_in :in std_logic;
-
-	--alu_cntrl_1_out:out std_logic;
-	Rd_out: out std_logic_vector(2 downto 0);
-	Rs1_out:out std_logic_vector(2 downto 0);
-	Rs2_out:out std_logic_vector(2 downto 0);
-	Pc_out : out std_logic_vector( 15 downto 0);
-	
-	S1_out:out std_logic_vector( 15 downto 0);
-	RF_enable_out,Mem_write_out,Mem_read_out,Dout_mux_cntrl_out: out std_logic;
-	Load_0_out:out std_logic;
-	alu_result_out:out std_logic_vector(15 downto 0);
-	alu_z_output_out:out std_logic;
-
-	LM_SM_bit_in:in std_logic;
-	LM_SM_bit_out:out std_logic;
-
-	clk,enable,reset :in std_logic
-	);
-
-end component;
-
-component pipeline_reg5 is
-port(
-
-	RF_enable_in:in std_logic;
-	Rd_in : in std_logic_vector(2 downto 0);
-	result_in:in std_logic_vector(15 downto 0);
-
-	RF_enable_out:out std_logic;
-	Rd_out: out std_logic_vector(2 downto 0);
-	result_out:out std_logic_vector(15 downto 0);
-	clk,enable,reset :in std_logic
-);
-
-end component;
-
-component InstructionDecode is
-port(   IR: in std_logic_vector(15 downto 0);		--IR = InstructionRegister
-		Rpe_zero_checker : in std_logic;
-     	RdMuxCtrl : out std_logic;
-		Rpe_mux_ctrl : out std_logic;
-
-		Rs1, Rs2, Rd : out std_logic_vector(2 downto 0);
-		Rf_en : out std_logic;
-		Rs1_dep, Rs2_dep : out std_logic;
-	
-		mem_read, mem_write : out std_logic;
-		Dout_mux_ctrl : out std_logic;    --whether data from mem or from alu_output
-	
-		ALU_ctrl : out std_logic_vector(1 downto 0);
-		ALU_output_mux_ctrl : out std_logic_vector(1 downto 0);
-		C_en, C_dep, Z_en, Z_dep : out std_logic; 
-		ALU_a_input_mux_ctrl : out std_logic;
-
-		S2_mux_ctrl : out std_logic;
-		--S1_mux_ctrl : std_logic_vector(1 downto 0);
-
-		Load_0 : out std_logic;
-		--Z_mux_ctrl : std_logic;
-
-		JAL_bit, JLR_bit, LM_SM_bit : out std_logic
- );
-end component;
-
-component Data_path is 
-
-port (clk:in std_logic;
-	reset:in std_logic
-);
-end component;
-
-
+    type arr1 is array(natural range <>) of std_logic_vector(15 downto 0);
+
+    --ALU for add, nand
+    --aluOP=0 means add, =1 means nand
+    component alu is
+        port(
+            IP1, IP2 : in std_logic_vector(15 downto 0);
+            OP : out std_logic_vector(15 downto 0);
+            aluOP : in std_logic;
+            C: out std_logic);
+    end component;
+    
+    --Memory for data
+    --A - address
+    --Din - data to write
+    --Dout - read data
+    --To read - address in A, memR high. Dout will have data
+    --To write - address in A, data in Din, memWR high
+    component dataMemory is
+        port(
+            A, Din : in std_logic_vector(15 downto 0);
+            Dout : out std_logic_vector(15 downto 0);
+            memWR : in std_logic;
+            clk : in std_logic);
+    end component;
+
+    --Memory for instruction
+    --A - address
+    --Dout - read data
+    --To read - address in A, memR high. Dout will have data
+    --To write - address in A, data in Din, memWR high
+    component instrMemory is
+        port(
+            A,B : in std_logic_vector(15 downto 0);
+	    Dout1,Dout2 : out std_logic_vector(15 downto 0);
+	    memWR : in std_logic;
+	    clk : in std_logic);
+    end component;
+    
+    --Generic register
+    component dataRegister is
+        generic (data_width:integer);
+        port(
+            Din : in std_logic_vector(data_width-1 downto 0);
+            Dout : out std_logic_vector(data_width-1 downto 0);
+            clk, enable : in std_logic);
+    end component;
+
+    --Register File
+    component RF is
+        port(RF_write, PC_write: in std_logic;
+            A1,A2,A3: in std_logic_vector (2 downto 0);
+            D3,PC_in: in std_logic_vector(15 downto 0);
+            D1,D2,PC_out: out std_logic_vector(15 downto 0);
+            R0,R1,R2,R3,R4,R5,R6,R7: out std_logic_vector(15 downto 0);
+            rst, clk: in std_logic);
+    end component;
+
+    --Comparator
+    component Comparator is
+        port(
+		    Comp_D1,Comp_D2: in std_logic_vector(15 downto 0);
+			Comp_out: out std_logic);
+    end component;
+
+    --sign extender 6 to 16
+    component sign_extender_6to16 is
+    	port(
+	    x: in std_logic_vector(5 downto 0);
+	    y: out std_logic_vector( 15 downto 0)
+    	);
+    end component;
+
+    --sign extender 9 to 16
+    component sign_extender_9to16 is
+        port(
+	    x: in std_logic_vector(8 downto 0);
+	    y: out std_logic_vector( 15 downto 0)
+        );
+    end component;
+
+    component InstructionDecoder is
+    	port(instr: in std_logic_vector(15 downto 0);
+             rs1,rs2,rd: out std_logic_vector(2 downto 0);
+             branch, decode_br_loc, regread_br_loc: out std_logic;
+             branch_state: out std_logic_vector (1 downto 0);
+             mem_read, mem_write, rf_write: out std_logic);
+    end component;
+
+    component ROB is
+	port(
+		instr1,pc1: in std_logic_vector(15 downto 0);
+		instr1_rs1,instr1_rs2,instr1_rd: in std_logic_vector(2 downto 0);
+		instr1_branch,instr1_decode_br_loc,instr1_regread_br_loc: in std_logic;
+		instr1_branch_state: in std_logic_vector (1 downto 0);
+		instr1_mem_read,instr1_mem_write,instr1_rf_write: in std_logic;
+		instr2,pc2: in std_logic_vector(15 downto 0);
+		instr2_rs1,instr2_rs2,instr2_rd: in std_logic_vector(2 downto 0);
+		instr2_branch,instr2_decode_br_loc,instr2_regread_br_loc: in std_logic;
+		instr2_branch_state: in std_logic_vector (1 downto 0);
+		instr2_mem_read,instr2_mem_write,instr2_rf_write: in std_logic;
+		clk,reset: in std_logic;
+		stall1,stall2: out std_logic);
+    end component;
 
 end package;
-

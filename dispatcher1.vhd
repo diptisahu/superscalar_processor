@@ -138,17 +138,3 @@ begin
 	end process;
 
 end behave;
-
-
-
-
-
-
-
-
-
-
-
-
-
-

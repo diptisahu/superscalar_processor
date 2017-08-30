@@ -11,8 +11,6 @@ end sign_extender_6to16;
 
 architecture Formula_SE_6to16 of sign_extender_6to16 is 
 
-
-
 begin
 
 	y(0) <= x(0);
@@ -32,13 +30,11 @@ begin
 	y(14) <= x(5);
 	y(15) <= x(5);
 
-
 end Formula_SE_6to16;
 
 
 library ieee;
 use ieee.std_logic_1164.all;
-
 
 entity sign_extender_9to16 is
 port(
@@ -48,8 +44,6 @@ port(
 end sign_extender_9to16;
 
 architecture Formula_SE_9to16 of sign_extender_9to16 is 
-
-
 
 begin
 
@@ -70,6 +64,4 @@ begin
 	y(14) <= x(8);
 	y(15) <= x(8);
 
-
 end Formula_SE_9to16;
-
