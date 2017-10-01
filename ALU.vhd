@@ -9,7 +9,7 @@ entity alu is
         IP1, IP2 : in std_logic_vector(15 downto 0);
         OP : out std_logic_vector(15 downto 0);
         aluOP : in std_logic;
-		C: out std_logic);
+	C,Z : out std_logic);
 end entity;
 
 architecture Behave of alu is
@@ -26,5 +26,6 @@ begin
 	OP_s <= std_logic_vector(unsigned(IP1_s) + unsigned(IP2_s));
 	OP <= std_logic_vector(OP_s(15 downto 0)) when (aluOP='0') 
 	        else (IP1 nand IP2);
-	C<= OP_s(16) when (aluOP='0') else '0';
+	C <= OP_s(16) when (aluOP='0') else '0';
+        Z <= '1' when (OP_s(15 downto 0)="0000000000000000") else '0';
 end Behave;

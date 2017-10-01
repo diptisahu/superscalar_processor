@@ -4,57 +4,75 @@ use ieee.numeric_std.all;
 library work;
 use work.Microprocessor_project.all;
 
---p31_instr_out, p32_instr_out, p31_instr_d1_out, p31_instr_d2_out, p32_instr_d1_out,
-	--p32_instr_d2_out, p31_instr_d_out, p32_instr_d_out, Dout1, Dout2, clk, rst, rob_instr1, rob_instr2
-
---without dispatching logic
-entity ROB is
+--without valid logic and dispatching logic
+entity ReserveStation is
     port(
-        instr1, instr2 : in std_logic_vector(50 downto 0);
-        instr1_d1,instr1_d2,instr2_d1,instr2_d2 : in std_logic_vector(15 downto 0);
-	instr1_d, instr2_d, Dout1, Dout2 : in std_logic_vector(15 downto 0);
+        instr1,pc1 : in std_logic_vector(15 downto 0);
+        instr1_rs1,instr1_rs2,instr1_rd: in std_logic_vector(2 downto 0);
+        instr1_branch,instr1_decode_br_loc,instr1_regread_br_loc: in std_logic;
+        instr1_branch_state: in std_logic_vector (1 downto 0);
+        instr1_mem_read,instr1_mem_write,instr1_rf_write: in std_logic;
+        instr2,pc2 : in std_logic_vector(15 downto 0);
+        instr2_rs1,instr2_rs2,instr2_rd: in std_logic_vector(2 downto 0);
+        instr2_branch,instr2_decode_br_loc,instr2_regread_br_loc: in std_logic;
+        instr2_branch_state: in std_logic_vector (1 downto 0);
+        instr2_mem_read,instr2_mem_write,instr2_rf_write: in std_logic;
         clk,reset: in std_logic;
-	rob_instr1, rob_instr2 : out std_logic_vector(114 downto 0);
-	pci : out std_logic_vector(15 downto 0);
-	pcWr : out std_logic;
-        stall1, stall2 : out std_logic);
+	instr1_out,instr2_out: out std_logic_vector(50 downto 0);
+	stall1, stall2: out std_logic);
 end entity;
 
-architecture Behave of ROB is
-    type vec116 is array(natural range <>) of std_logic_vector(115 downto 0);
-    signal reg : vec116(0 to 15) := (others => (others => '0'));
-    signal data1, data2: std_logic_vector(115 downto 0);
+architecture Behave of ReserveStation is
+    type vec51 is array(natural range <>) of std_logic_vector(50 downto 0);
+    signal reg : vec51(0 to 15) := (others => (others => '0'));
+    signal data1, data2: std_logic_vector(50 downto 0);
 begin
 
-    data1(50 downto 0) <= instr1;
-    data1(66 downto 51) <= instr1_d1;
-    data1(82 downto 67) <= instr1_d2;
-    data1(98 downto 83) <= instr1_d;
-    data1(114 downto 99) <= Dout1;
-    data1(115) <= '1';			--occupied
+    data1(15 downto 0) <= instr1;
+    data1(31 downto 16) <= pc1;
+    data1(34 downto 32) <= instr1_rs1;
+    data1(37 downto 35) <= instr1_rs2;
+    data1(40 downto 38) <= instr1_rd;
+    data1(41) <= instr1_branch;
+    data1(42) <= instr1_decode_br_loc;
+    data1(43) <= instr1_regread_br_loc;
+    data1(45 downto 44) <= instr1_branch_state;
+    data1(46) <= instr1_mem_read;
+    data1(47) <= instr1_mem_write;
+    data1(48) <= instr1_rf_write;
+    data1(49) <= '1';
+    data1(50) <= '0';
   
-    data2(50 downto 0) <= instr2;
-    data2(66 downto 51) <= instr2_d1;
-    data2(82 downto 67) <= instr2_d2;
-    data2(98 downto 83) <= instr2_d;
-    data2(114 downto 99) <= Dout2;
-    data2(115) <= '1';			--occupied
+    data2(15 downto 0) <= instr2;
+    data2(31 downto 16) <= pc2;
+    data2(34 downto 32) <= instr2_rs1;
+    data2(37 downto 35) <= instr2_rs2;
+    data2(40 downto 38) <= instr2_rd;
+    data2(41) <= instr2_branch;
+    data2(42) <= instr2_decode_br_loc;
+    data2(43) <= instr2_regread_br_loc;
+    data2(45 downto 44) <= instr2_branch_state;
+    data2(46) <= instr2_mem_read;
+    data2(47) <= instr2_mem_write;
+    data2(48) <= instr2_rf_write;
+    data2(49) <= '1';			--occupied
+    data2(50) <= '0';			--valid
   
     process(clk)
         variable wrAddr1,wrAddr2 : integer := 16;
-	variable data : std_logic_vector(115 downto 0);
+	variable data : std_logic_vector(50 downto 0);
 	variable stall_in_1, stall_in_2 : std_logic;
     begin
     	stall_in_1 := '1';
     	stall_in_2 := '1';
 
 	data := reg(15);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    wrAddr1 := 15;
 	    stall_in_1 := '0';
 	end if;
 	data :=reg(14);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 14;
 	    	stall_in_1 := '0';
@@ -64,7 +82,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(13);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 13;
 	    	stall_in_1 := '0';
@@ -76,7 +94,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(12);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 12;
 	    	stall_in_1 := '0';
@@ -88,7 +106,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(11);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 11;
 	    	stall_in_1 := '0';
@@ -100,7 +118,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(10);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 10;
 	    	stall_in_1 := '0';
@@ -112,7 +130,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(9);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 9;
 	    	stall_in_1 := '0';
@@ -124,7 +142,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(8);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 8;
 	    	stall_in_1 := '0';
@@ -136,7 +154,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(7);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 7;
 	    	stall_in_1 := '0';
@@ -148,7 +166,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(6);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 6;
 	    	stall_in_1 := '0';
@@ -160,7 +178,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(5);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 5;
 	    	stall_in_1 := '0';
@@ -172,7 +190,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(4);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 4;
 	    	stall_in_1 := '0';
@@ -184,7 +202,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(3);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 3;
 	    	stall_in_1 := '0';
@@ -196,7 +214,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(2);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 2;
 	    	stall_in_1 := '0';
@@ -208,7 +226,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(1);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 1;
 	    	stall_in_1 := '0';
@@ -220,7 +238,7 @@ begin
 	    end if;
 	end if;
 	data :=reg(0);
-	if(data(115)='0') then
+	if(data(49)='0') then
 	    if (stall_in_1='1') then
 	    	wrAddr1 := 0;
 	    	stall_in_1 := '0';

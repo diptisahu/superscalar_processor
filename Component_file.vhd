@@ -8,34 +8,24 @@ package Microprocessor_project is
     type arr1 is array(natural range <>) of std_logic_vector(15 downto 0);
 
     --ALU for add, nand
-    --aluOP=0 means add, =1 means nand
-    component alu is
+    component ALU is
         port(
             IP1, IP2 : in std_logic_vector(15 downto 0);
             OP : out std_logic_vector(15 downto 0);
             aluOP : in std_logic;
-            C: out std_logic);
+	    C,Z : out std_logic);
     end component;
     
     --Memory for data
-    --A - address
-    --Din - data to write
-    --Dout - read data
-    --To read - address in A, memR high. Dout will have data
-    --To write - address in A, data in Din, memWR high
     component dataMemory is
         port(
-            A, Din : in std_logic_vector(15 downto 0);
-            Dout : out std_logic_vector(15 downto 0);
-            memWR : in std_logic;
+            A,B,Din1,Din2 : in std_logic_vector(15 downto 0);
+            Dout1,Dout2 : out std_logic_vector(15 downto 0);
+            memWR1,memWR2 : in std_logic;
             clk : in std_logic);
     end component;
 
     --Memory for instruction
-    --A - address
-    --Dout - read data
-    --To read - address in A, memR high. Dout will have data
-    --To write - address in A, data in Din, memWR high
     component instrMemory is
         port(
             A,B : in std_logic_vector(15 downto 0);
@@ -54,13 +44,13 @@ package Microprocessor_project is
     end component;
 
     --Register File
-    component RF is
-        port(RF_write, PC_write: in std_logic;
-            A1,A2,A3: in std_logic_vector (2 downto 0);
-            D3,PC_in: in std_logic_vector(15 downto 0);
-            D1,D2,PC_out: out std_logic_vector(15 downto 0);
-            R0,R1,R2,R3,R4,R5,R6,R7: out std_logic_vector(15 downto 0);
-            rst, clk: in std_logic);
+    component regFile is
+        port(
+	    a1, a2, a3, a4, a5, a6 : in std_logic_vector(2 downto 0);
+            d5, d6, pci : in std_logic_vector(15 downto 0);
+            d1, d2, d3, d4 : out std_logic_vector(15 downto 0);
+            regWr1, regWr2, pcWr : in std_logic;
+            clk, reset : in std_logic);
     end component;
 
     --Comparator
@@ -94,7 +84,7 @@ package Microprocessor_project is
              mem_read, mem_write, rf_write: out std_logic);
     end component;
 
-    component ROB is
+    component ReserveStation is
 	port(
 		instr1,pc1: in std_logic_vector(15 downto 0);
 		instr1_rs1,instr1_rs2,instr1_rd: in std_logic_vector(2 downto 0);
@@ -107,7 +97,20 @@ package Microprocessor_project is
 		instr2_branch_state: in std_logic_vector (1 downto 0);
 		instr2_mem_read,instr2_mem_write,instr2_rf_write: in std_logic;
 		clk,reset: in std_logic;
+		instr1_out,instr2_out: out std_logic_vector(50 downto 0);
 		stall1,stall2: out std_logic);
+    end component;
+ 
+    component ROB is
+	port(
+		instr1,instr2 : in std_logic_vector(50 downto 0);
+		instr1_d1,instr1_d2,instr2_d1,instr2_d2 : in std_logic_vector(15 downto 0);
+		instr1_d, instr2_d, Dout1, Dout2 : in std_logic_vector(15 downto 0);
+		clk,reset: in std_logic;
+		rob_instr1, rob_instr2 : out std_logic_vector(114 downto 0);
+		pci : out std_logic_vector(15 downto 0);
+		pcWr : out std_logic;
+        	stall1, stall2 : out std_logic);
     end component;
 
 end package;
